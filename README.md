@@ -1,0 +1,2 @@
+# gomon
+A fsnotify wrapper
