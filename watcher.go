@@ -111,3 +111,7 @@ func (w Watcher) Close() error {
 	close(w.Events)
 	return w.base.Close()
 }
+
+func (w Watcher) GetConfig() Config {
+	return w.config
+}
