@@ -32,10 +32,18 @@ func main() {
     log.Fatal(err)
   }
 
-  for event := range watcher.Events {
-    // Print file modifications
-    log.Println(event)
-  }
+  for {
+		select {
+		case event, ok := <-watcher.Events:
+			if !ok {
+				break
+			}
+      // Print file modifications
+			log.Println(event)
+		case err := <-watcher.Errors:
+			log.Fatal(err)
+		}
+	}
 }
 ```
 
