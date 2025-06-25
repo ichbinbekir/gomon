@@ -3,10 +3,10 @@ package gomon
 import "reflect"
 
 type Config struct {
-	// TODO Comment: Events and Errors channel buffer size, both fsnotify and gomon.
-	// Events channel buffer size, both fsnotify and gomon.
+	// Events and Errors channel buffer size, both fsnotify and gomon.
 	BufferSize uint
 
+	// Save files or directories modification dates to file.
 	Save string
 }
 

@@ -10,11 +10,11 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
-// TODO: Add errors
 type Watcher struct {
 	base   *fsnotify.Watcher
 	config Config
 	Events chan Event
+	Errors chan error
 	save   *os.File
 	dates  map[string]time.Time
 }
@@ -28,6 +28,7 @@ func NewWatcher(configs ...Config) (*Watcher, error) {
 		return nil, err
 	}
 
+	w.Errors = w.base.Errors
 	w.Events = make(chan Event, w.config.BufferSize)
 	go func() {
 		for event := range w.base.Events {

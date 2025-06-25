@@ -47,7 +47,15 @@ func TestMain(t *testing.T) {
 	}
 	t.Log(op)
 
-	for event := range watcher.Events {
-		t.Log(event)
+	for {
+		select {
+		case event, ok := <-watcher.Events:
+			if !ok {
+				break
+			}
+			t.Log(event)
+		case err := <-watcher.Errors:
+			t.Error(err)
+		}
 	}
 }
