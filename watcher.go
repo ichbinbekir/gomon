@@ -51,13 +51,15 @@ func NewWatcher(configs ...Config) (*Watcher, error) {
 	return w, nil
 }
 
-// TODO: We don't need check file exist because if it doesn't exist, it's been removed or renamed, right?
 func (w Watcher) Add(path string) (Op, error) {
 	var op Op
 	if w.dates != nil {
 		info, err := os.Stat(path)
 		if err != nil {
 			if os.IsNotExist(err) {
+				if w.dates[path].IsZero() {
+					return Non, err
+				}
 				op = Remove | Rename
 			} else {
 				return Non, err
@@ -71,8 +73,6 @@ func (w Watcher) Add(path string) (Op, error) {
 	return op, w.base.Add(path)
 }
 
-// TODO: Files in directory.
-// Rewrite Close() function, this is dangerous.
 func (w Watcher) Close() error {
 	if w.save != nil {
 		names := w.base.WatchList()

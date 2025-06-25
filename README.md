@@ -4,6 +4,12 @@ You can capture file or folder changes, but that's not all.
 
 Gomon saves the last modification dates of the watched files, so it can detect any changes when it is started at a later time.
 
+## 🎯 Future
+
+- [x] Errors.
+- [ ] Save the files under the directory.
+- [ ] Rewrite Close function.
+
 ## ⚡️ Quickstart
 
 ```go
