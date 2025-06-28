@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"time"
+	"unsafe"
 
 	"github.com/fsnotify/fsnotify"
 )
@@ -28,13 +29,8 @@ func NewWatcher(configs ...Config) (*Watcher, error) {
 		return nil, err
 	}
 
+	w.Events = *(*chan Event)(unsafe.Pointer(&w.base.Events))
 	w.Errors = w.base.Errors
-	w.Events = make(chan Event, w.config.BufferSize)
-	go func() {
-		for event := range w.base.Events {
-			w.Events <- fsnotify2gomon(event)
-		}
-	}()
 
 	if w.config.Save != "" {
 		w.save, err = os.OpenFile(w.config.Save, os.O_CREATE|os.O_RDWR, os.ModePerm)
@@ -76,6 +72,9 @@ func (w Watcher) Add(path string) (Op, error) {
 func (w Watcher) Close() error {
 	if w.save != nil {
 		names := w.base.WatchList()
+		if err := w.base.Close(); err != nil {
+			return err
+		}
 		dates := make(map[string]time.Time, len(names))
 		for _, name := range names {
 			info, err := os.Stat(name)
@@ -102,17 +101,11 @@ func (w Watcher) Close() error {
 			// We can continue without save.
 			return err
 		}
-
-		if err := w.save.Close(); err != nil {
-			return err
-		}
+		return w.save.Close()
 	}
-
-	// TODO: race condition.
-	close(w.Events)
 	return w.base.Close()
 }
 
-func (w Watcher) GetConfig() Config {
+func (w Watcher) Config() Config {
 	return w.config
 }

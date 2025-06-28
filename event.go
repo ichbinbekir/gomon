@@ -18,7 +18,3 @@ func (e Event) String() string {
 func gomon2fsnotify(e Event) fsnotify.Event {
 	return fsnotify.Event{Name: e.Name, Op: fsnotify.Op(e.Op)}
 }
-
-func fsnotify2gomon(e fsnotify.Event) Event {
-	return Event{Name: e.Name, Op: Op(e.Op)}
-}
