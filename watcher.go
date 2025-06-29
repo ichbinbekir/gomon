@@ -35,19 +35,17 @@ func NewWatcher(configs ...Config) (*Watcher, error) {
 	if w.config.Save != "" {
 		w.save, err = os.OpenFile(w.config.Save, os.O_CREATE|os.O_RDWR, os.ModePerm)
 		if err != nil {
-			// You can continue without save system.
-			return w, err
+			return w, &SaveError{Op: "open file", Err: err}
 		}
 
 		if err := json.NewDecoder(w.save).Decode(&w.dates); err != nil && !errors.Is(err, io.EOF) {
-			// You can continue without save system.
-			return w, err
+			return w, &SaveError{Op: "decode", Err: err}
 		}
 	}
 	return w, nil
 }
 
-func (w Watcher) Add(path string) (Op, error) {
+func (w *Watcher) Add(path string) (Op, error) {
 	var op Op
 	if w.dates != nil {
 		info, err := os.Stat(path)
@@ -69,43 +67,44 @@ func (w Watcher) Add(path string) (Op, error) {
 	return op, w.base.Add(path)
 }
 
-func (w Watcher) Close() error {
+func (w *Watcher) Close() error {
 	if w.save != nil {
 		names := w.base.WatchList()
 		if err := w.base.Close(); err != nil {
 			return err
 		}
-		dates := make(map[string]time.Time, len(names))
-		for _, name := range names {
-			info, err := os.Stat(name)
-			// TODO: Think renaming and dates size
-			if err != nil {
-				continue
-			}
-			dates[name] = info.ModTime()
-		}
-
-		if err := w.save.Truncate(0); err != nil {
-			// TODO: It is very likely to get an error, return should not be made directly.
-			// We can continue without save.
-			return err
-		}
-		if _, err := w.save.Seek(0, 0); err != nil {
-			// TODO: It is very likely to get an error, return should not be made directly.
-			// We can continue without save.
-			return err
-		}
-
-		if err := json.NewEncoder(w.save).Encode(dates); err != nil {
-			// TODO: It is very likely to get an error, return should not be made directly.
-			// We can continue without save.
-			return err
-		}
-		return w.save.Close()
+		return saveDates(w.save, names)
 	}
 	return w.base.Close()
 }
 
-func (w Watcher) Config() Config {
+func (w *Watcher) Config() Config {
 	return w.config
+}
+
+func saveDates(file *os.File, names []string) error {
+	var statErr error
+	dates := make(map[string]time.Time, len(names))
+	for _, name := range names {
+		info, err := os.Stat(name)
+		if err != nil {
+			statErr = errors.Join(statErr, err)
+			continue
+		}
+		dates[name] = info.ModTime()
+	}
+
+	if err := file.Truncate(0); err != nil {
+		return &SaveError{Op: "truncate", Err: errors.Join(statErr, err)}
+	}
+	if _, err := file.Seek(0, 0); err != nil {
+		return &SaveError{Op: "seek", Err: errors.Join(statErr, err)}
+	}
+	if err := json.NewEncoder(file).Encode(dates); err != nil {
+		return &SaveError{Op: "encode", Err: errors.Join(statErr, err)}
+	}
+	if err := file.Close(); err != nil {
+		return &SaveError{Op: "close file", Err: errors.Join(statErr, err)}
+	}
+	return statErr
 }

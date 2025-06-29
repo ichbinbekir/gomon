@@ -8,7 +8,6 @@ Gomon saves the last modification dates of the watched files, so it can detect a
 
 - [x] Errors.
 - [ ] Save the files under the directory.
-- [ ] Rewrite Close function.
 
 ## ⚡️ Quickstart
 
