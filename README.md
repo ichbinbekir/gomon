@@ -49,5 +49,5 @@ func main() {
 ## ⚙️ Installation
 
 ```bash
-go get -u github.com/ichbinbekir/keyboard
+go get -u github.com/ichbinbekir/gomon
 ```
